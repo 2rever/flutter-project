@@ -3,15 +3,20 @@ import './pages/index_page.dart';
 import 'package:provide/provide.dart';
 import './provide/counter.dart';
 import './provide/child_category.dart';
+import './provide/category_goods_list.dart';
 
 
 void main () {
   var counter = Counter();
   var providers = Providers();
   var childCategory = ChildCategory();
+  var categoryGoodsListProvide = CategoryGoodsListProvide();
   
-  providers..provide(Provider<Counter>.value(counter));
-  providers..provide(Provider<ChildCategory>.value(childCategory));
+  providers
+    ..provide(Provider<Counter>.value(counter))
+    ..provide(Provider<CategoryGoodsListProvide>.value(categoryGoodsListProvide))
+    ..provide(Provider<ChildCategory>.value(childCategory));
+
   runApp(ProviderNode(child:MyApp (),providers:providers));
 }
 
