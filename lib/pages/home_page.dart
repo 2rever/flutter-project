@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_easyrefresh/easy_refresh.dart';
 import 'package:flutter_easyrefresh/ball_pulse_footer.dart';
+import '../routers/application.dart';
 
 class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
@@ -15,7 +16,6 @@ class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin {
   int page = 1;
   List<Map> hotGoodsList = [];
-
 
   @override
   bool get wantKeepAlive => true;
@@ -30,7 +30,7 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('测试app'),
+          title: Text('买买酒'),
         ),
         body: FutureBuilder(
           future: getHomePageContent(),
@@ -55,46 +55,45 @@ class _HomePageState extends State<HomePage>
               List<Map> floor3 = (data['data']['floor3'] as List).cast();
 
               return EasyRefresh(
-                footer: BallPulseFooter(),
-                child: ListView(
-                children: <Widget>[
-                  SwiperDiy(swiperDataList: swiper), //页面顶部轮播组件
-                  TopNavigator(navgatorList: navgatorList),
-                  AdBanner(adPicture: adPicture),
-                  LeaderPhone(
-                      leaderImage: leaderImage, leaderPhone: leaderPhone),
-                  Recommend(
-                    recommendList: recommendList,
+                  footer: BallPulseFooter(),
+                  child: ListView(
+                    children: <Widget>[
+                      SwiperDiy(swiperDataList: swiper), //页面顶部轮播组件
+                      TopNavigator(navgatorList: navgatorList),
+                      AdBanner(adPicture: adPicture),
+                      LeaderPhone(
+                          leaderImage: leaderImage, leaderPhone: leaderPhone),
+                      Recommend(
+                        recommendList: recommendList,
+                      ),
+                      FloorTitle(picture_address: floor1Title),
+                      FloorContent(
+                        floorGoodsList: floor1,
+                      ),
+                      FloorTitle(picture_address: floor2Title),
+                      FloorContent(
+                        floorGoodsList: floor2,
+                      ),
+                      FloorTitle(picture_address: floor3Title),
+                      FloorContent(
+                        floorGoodsList: floor3,
+                      ),
+                      _hotGoods()
+                    ],
                   ),
-                  FloorTitle(picture_address: floor1Title),
-                  FloorContent(
-                    floorGoodsList: floor1,
-                  ),
-                  FloorTitle(picture_address: floor2Title),
-                  FloorContent(
-                    floorGoodsList: floor2,
-                  ),
-                  FloorTitle(picture_address: floor3Title),
-                  FloorContent(
-                    floorGoodsList: floor3,
-                  ),
-                  _hotGoods()
-                ],
-
-              ),
-              onLoad:() async {
-                print('开始加载更多.....');
-                var formData = {'page': page};
-                await request('homePageBelowConten', formData: formData).then((val) {
-                  var data = json.decode(val.toString());
-                  List<Map> newGoodsList = (data['data'] as List).cast();
-                  setState(() {
-                    hotGoodsList.addAll(newGoodsList);
-                    page++;
+                  onLoad: () async {
+                    print('开始加载更多.....');
+                    var formData = {'page': page};
+                    await request('homePageBelowConten', formData: formData)
+                        .then((val) {
+                      var data = json.decode(val.toString());
+                      List<Map> newGoodsList = (data['data'] as List).cast();
+                      setState(() {
+                        hotGoodsList.addAll(newGoodsList);
+                        page++;
+                      });
+                    });
                   });
-                });
-              }
-            );
             } else {
               return Center(
                 child: Text('加载中...'),
@@ -103,8 +102,6 @@ class _HomePageState extends State<HomePage>
           },
         ));
   }
-
-
 
   Widget hotTitle = Container(
       margin: EdgeInsets.only(top: 10),
@@ -117,7 +114,10 @@ class _HomePageState extends State<HomePage>
     if (hotGoodsList.length != 0) {
       List<Widget> listWidget = hotGoodsList.map((val) {
         return InkWell(
-          onTap: () {},
+          onTap: () {
+            Application.router
+                .navigateTo(context, "/details?id=${val['goodsId']}");
+          },
           child: Container(
               width: ScreenUtil().setWidth(372),
               color: Colors.white,
@@ -177,8 +177,13 @@ class SwiperDiy extends StatelessWidget {
       width: ScreenUtil().setWidth(750),
       child: Swiper(
         itemBuilder: (BuildContext context, int index) {
-          return Image.network("${swiperDataList[index]['image']}",
-              fit: BoxFit.fill);
+          return InkWell(
+              onTap: () {
+                Application.router.navigateTo(
+                    context, "/details?id=${swiperDataList[index]['goodsId']}");
+              },
+              child: Image.network("${swiperDataList[index]['image']}",
+                  fit: BoxFit.fill));
         },
         itemCount: swiperDataList.length,
         pagination: new SwiperPagination(),
@@ -283,9 +288,11 @@ class Recommend extends StatelessWidget {
   }
 
   //商品单独项目
-  Widget _item(index) {
+  Widget _item(context,index) {
     return InkWell(
-      onTap: () {},
+      onTap: () {
+         Application.router.navigateTo(context, "/details?id=${recommendList[index]['goodsId']}");
+      },
       child: Container(
           height: ScreenUtil().setHeight(330),
           width: ScreenUtil().setWidth(250),
@@ -315,7 +322,7 @@ class Recommend extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             itemCount: recommendList.length,
             itemBuilder: (context, index) {
-              return _item(index);
+              return _item(context,index);
             }));
   }
 
@@ -357,40 +364,41 @@ class FloorContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       child: Column(
-        children: <Widget>[_firstRow(), _otherGoods()],
+        children: <Widget>[_firstRow(context), _otherGoods(context)],
       ),
     );
   }
 
-  Widget _firstRow() {
+  Widget _firstRow(context) {
     return Row(
       children: <Widget>[
-        _goodsItem(floorGoodsList[0]),
+        _goodsItem(context,floorGoodsList[0]),
         Column(
           children: <Widget>[
-            _goodsItem(floorGoodsList[1]),
-            _goodsItem(floorGoodsList[2]),
+            _goodsItem(context,floorGoodsList[1]),
+            _goodsItem(context,floorGoodsList[2]),
           ],
         )
       ],
     );
   }
 
-  Widget _otherGoods() {
+  Widget _otherGoods(context) {
     return Row(
       children: <Widget>[
-        _goodsItem(floorGoodsList[3]),
-        _goodsItem(floorGoodsList[4]),
+        _goodsItem(context,floorGoodsList[3]),
+        _goodsItem(context,floorGoodsList[4]),
       ],
     );
   }
 
-  Widget _goodsItem(Map goods) {
+  Widget _goodsItem(BuildContext context, Map goods) {
     return Container(
         width: ScreenUtil().setWidth(375),
         child: InkWell(
             onTap: () {
-              print('点击了楼层商品');
+               Application.router.navigateTo(
+                    context, "/details?id=${goods['goodsId']}");
             },
             child: Image.network(goods['image'])));
   }
